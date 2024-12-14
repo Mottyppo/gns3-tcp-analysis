@@ -204,17 +204,31 @@ if __name__ == "__main__":
     data_path = "./data/"
     single_plots_path = "./plots/single/"
     multiple_plots_path = "./plots/multiple/"
+
+    # Create directories if unexisting
+    os.makedirs(pcap_path, exist_ok=True)
+    os.makedirs(data_path, exist_ok=True)
+    os.makedirs(single_plots_path, exist_ok=True)
+    os.makedirs(multiple_plots_path, exist_ok=True)
+
     experiments = []
-    pcap_files = [f for f in os.listdir(pcap_path) if os.path.isfile(os.path.join(pcap_path, f))]
-    for pcap_file in pcap_files:
-        file_name = pcap_file.split('.')[0]
-        os.system(f"python pcapparser.py {os.path.join(pcap_path, pcap_file)} {os.path.join(data_path, file_name)}")
-        os.remove(os.path.join(data_path, file_name + ".xlsx"))
-    files = [f for f in os.listdir(data_path) if os.path.isfile(os.path.join(data_path, f))]
-    for i, file in enumerate(files):
-        file_path = os.path.join(data_path, file)
-        plots_path = single_plots_path + file.split('.')[0] + "_"
-        data = analyze_data(file_path, i)
-        experiments.append(data)
-        plot_single(plots_path, data)
-    plot_multiple(multiple_plots_path, experiments)
+
+    try:
+    
+        pcap_files = [f for f in os.listdir(pcap_path) if os.path.isfile(os.path.join(pcap_path, f))]
+        for pcap_file in pcap_files:
+            file_name = pcap_file.split('.')[0]
+            os.system(f"python pcapparser.py {os.path.join(pcap_path, pcap_file)} {os.path.join(data_path, file_name)}")
+            os.remove(os.path.join(data_path, file_name + ".xlsx"))
+        
+        files = [f for f in os.listdir(data_path) if os.path.isfile(os.path.join(data_path, f))]
+        for i, file in enumerate(files):
+            file_path = os.path.join(data_path, file)
+            plots_path = single_plots_path + file.split('.')[0] + "_"
+            data = analyze_data(file_path, i)
+            experiments.append(data)
+            plot_single(plots_path, data)
+        plot_multiple(multiple_plots_path, experiments)
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
