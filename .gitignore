@@ -167,6 +167,9 @@ pcap/*
 # Data
 data/*
 
+# Tables
+tables/*
+
 # Plots
 plots/single/*
 plots/multiple/*

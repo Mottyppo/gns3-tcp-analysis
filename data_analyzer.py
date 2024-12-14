@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.table import Table
 
 #TODO: documentation
 
@@ -122,7 +123,43 @@ def analyze_data(file : str, n : int) -> ConnectionData :
     
     return data
 
-def plot_single(folder : str, data : ConnectionData):
+def create_summary_table(folder: str, data: list[ConnectionData]): #TODO: fix here
+
+    fig, ax = plt.subplots(figsize=(15, len(data) * 0.5 + 2))
+    ax.axis('tight')
+    ax.axis('off')
+
+    table_data = [
+        ["Experiment", "Duration (ms)", "Total Throughput (kbps)", "Average Throughput (kbps)", "Average RTT (ms)", "Efficiency (%)"]
+    ]
+
+    for i, exp_data in enumerate(data):
+        table_data.append([
+            f"Experiment {i + 1}",
+            exp_data.duration,
+            f"{sum(exp_data.throughput) / sum(exp_data.rtt) * 1000:.2f}",
+            f"{sum(exp_data.throughput) / len(exp_data.throughput):.2f}",
+            f"{sum(exp_data.rtt) / len(exp_data.rtt):.2f}",
+            f"{exp_data.efficiency:.2f}"
+        ])
+
+    table = Table(ax, bbox=[0, 0, 1, 1])
+    n_rows, n_cols = len(table_data), len(table_data[0])
+    width, height = 1.0 / n_cols, 1.0 / n_rows
+    for i in range(n_rows):
+        for j in range(n_cols):
+            facecolor = 'lightblue' if i == 0 else ('lightgrey' if i % 2 == 0 else 'white')
+            table.add_cell(i, j, width, height, text=table_data[i][j], loc='center', facecolor=facecolor)
+
+    table.set_fontsize(12)
+    table.scale(1.2, 1.2)
+    ax.add_table(table)
+
+    plt.title('Summary of Experiments', fontsize=16)
+    plt.savefig(folder + 'summary.png')
+    plt.close()
+
+def plot_single(filename : str, data : ConnectionData):
     fig, axs = plt.subplots(2, 2, figsize=(15, 10))
 
     # Plot RTT
@@ -154,7 +191,7 @@ def plot_single(folder : str, data : ConnectionData):
     axs[1, 1].legend()
 
     plt.tight_layout()
-    plt.savefig(folder + 'rtt.png')
+    plt.savefig(filename + '_rtt.png')
 
     # Plot Throughput
     deltaX = int(sum(data.rtt) / len(data.rtt))
@@ -181,7 +218,7 @@ def plot_single(folder : str, data : ConnectionData):
 
     plt.title('Throughput and RCWND')
     plt.tight_layout()
-    plt.savefig(folder + 'throughput_rcwnd.png')
+    plt.savefig(filename + '_throughput_rcwnd.png')
 
 def plot_multiple(folder : str, data : list[ConnectionData]):
 
@@ -202,12 +239,14 @@ def plot_multiple(folder : str, data : list[ConnectionData]):
 if __name__ == "__main__":
     pcap_path = "./pcap/"
     data_path = "./data/"
+    tables_path = "./tables/"
     single_plots_path = "./plots/single/"
     multiple_plots_path = "./plots/multiple/"
 
     # Create directories if unexisting
     os.makedirs(pcap_path, exist_ok=True)
     os.makedirs(data_path, exist_ok=True)
+    os.makedirs(tables_path, exist_ok=True)
     os.makedirs(single_plots_path, exist_ok=True)
     os.makedirs(multiple_plots_path, exist_ok=True)
 
@@ -223,11 +262,13 @@ if __name__ == "__main__":
         
         files = [f for f in os.listdir(data_path) if os.path.isfile(os.path.join(data_path, f))]
         for i, file in enumerate(files):
+            file_name = file.split('.')[0]
             file_path = os.path.join(data_path, file)
-            plots_path = single_plots_path + file.split('.')[0] + "_"
+            plots_path = single_plots_path + file_name
             data = analyze_data(file_path, i)
             experiments.append(data)
             plot_single(plots_path, data)
+        create_summary_table(tables_path, experiments)
         plot_multiple(multiple_plots_path, experiments)
     
     except Exception as e:
