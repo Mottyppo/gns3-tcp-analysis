@@ -35,8 +35,8 @@ Il seguente progetto è stato sviluppato per analizzare i pacchetti TCP catturat
    ```sh
    pip install -r requirements.txt
    ```
-5. Aggiungere i file `.pcap` alla cartella [pcap/](http://_vscodecontentref_/1) (se non esiste, crearla).
-6. Cambiare i propri dati nel file [data_analyzer.py](http://_vscodecontentref_/1) (dove sono presenti i commenti TODO).
+5. Aggiungere i file `.pcap` alla cartella pcap/ (se non esiste, crearla)
+6. Cambiare i propri dati nel file data_analyzer.py, dove sono presenti i commenti TODO
 
 ## Utilizzo
 
@@ -48,10 +48,10 @@ python data_analyzer.py
 
 ### ATTENZIONE!
 
-In caso i comandi `python` o `pip` non dovessero eseguire correttamente, utilizzare gli alternativi `python3` e `pip3`. Tutte le cartelle dovrebbero così popolarsi correttamente e dovrebbe essere possibile visualizzare da terminale i dati calcolati per i singoli esperimenti.
+In caso i comandi `python` o `pip` non dovessero eseguire correttamente, utilizzare gli alternativi `python3` e `pip3`. Tutte le cartelle dovrebbero così popolarsi correttamente e dovrebbe essere possibile visualizzare da terminale i dati calcolati per i singoli esperimenti
 
 ## Credits
 
-Questo progetto è stato sviluppato da [Mottyppo](https://github.com/Mottyppo) 🔥🔥. Se ci sono errori nei calcoli o nelle formule utilizzate ditemelo BESTIA CANE, così li correggo 😘.
+Questo progetto è stato sviluppato da [Mottyppo](https://github.com/Mottyppo) 🔥🔥. Se ci sono errori nei calcoli o nelle formule utilizzate ditemelo BESTIA CANE, così li correggo 😘
 
 **P.S.** mettete like alla repository ★
