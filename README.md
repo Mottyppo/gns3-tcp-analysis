@@ -35,8 +35,8 @@ Il seguente progetto è stato sviluppato per analizzare i pacchetti TCP catturat
    ```sh
    pip install -r requirements.txt
    ```
-5. Aggiungere i file `.pcap` alla cartella pcap/ (se non esiste, crearla)
-6. Cambiare i propri dati nel file data_analyzer.py, dove sono presenti i commenti TODO
+5. Aggiungere i file `.pcap` alla cartella `pcap/` (se non esiste, crearla)
+6. Cambiare i propri dati nel file `data_analyzer.py`, dove sono presenti i commenti TODO
 
 ## Utilizzo
 
