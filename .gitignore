@@ -173,3 +173,4 @@ tables/*
 # Plots
 plots/single/*
 plots/multiple/*
+.plot.py

@@ -3,41 +3,107 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 
-#TODO: documentation
+class ConnectionData:
+    """
+    A class to represent the data of a TCP connection.
+    Constants:
+        NOBWLIM_BANDWIDTH (int): The bandwidth of the connection fpr the first experiment.
+        BANDWIDTH (int): The bandwidth of the connection (based on the assignment).
+        DELAY (int): The delay of the connection (based on the assignment).
+        ALPHA (float): The alpha value for the SRTT calculation.
+        BETA (float): The beta value for the RTTVAR calculation.
+    Attributes:
+        exp_name (str): The name of the experiment.
+        duration (int): The duration of the capture in milliseconds.
+        rcwnd (list[int]): The receiver's congestion window.
+        average_rcwnd (float): The average receiver's congestion window.
+        throughput (list[int]): The throughput for each packet.
+        average_throughput (float): The average throughput.
+        total_throughput (float): The total throughput.
+        max_throughput (float): The maximum throughput.
+        average_use (float): The average efficiency of the connection.
+        rtt (list[int]): The round-trip time for packets.
+        average_rtt (float): The average round-trip time.
+        srtt (list[float]): The smoothed round-trip time.
+        average_srtt (float): The average smoothed round-trip time.
+        rttvar (list[float]): The round-trip time variance.
+        average_rttvar (float): The average round-trip time variance.
+        rto (list[float]): The retransmission timeout.
+        average_rto (float): The average retransmission timeout.
+    """
 
-class ConnectionData:# TODO: measurement units + refactor everything
-
-    EXP_1_BANDWIDTH = 100000 # kb per second
-    BANDWIDTH = 11100 # kb per second
-    DELAY = 42 # milliseconds
+    NOBWLIM_BANDWIDTH = 100000 # kb per second
+    BANDWIDTH = 11100 # kb per second #TODO: set based on the assignment 
+    DELAY = 42 # milliseconds #TODO: set based on the assignment
     CLIENT_IP = ['192.168.1.10', '192.168.1.11']
     SERVER_IP = ['192.168.1.20', '192.168.1.21']
     ALPHA = 0.125
     BETA = 0.25
 
+    exp_name = None # string
     duration = None # milliseconds
-    total_throughput = None # kb
-    throughput = None # kb per second
     rcwnd = None # bytes
-    efficiency = None #nu, %
+    average_rcwnd = None # bytes
+    throughput = None # kb per second
+    average_throughput = None # kb per second
+    total_throughput = None # kb
+    max_throughput = None # kb per second
+    average_use = None #eta, %
     rtt = None # milliseconds
-    srtt = None
-    rttvar = None
-    rto = None
+    average_rtt = None # milliseconds
+    srtt = None # milliseconds
+    average_srtt = None # milliseconds
+    rttvar = None # milliseconds
+    average_rttvar = None # milliseconds
+    rto = None # milliseconds
+    average_rto = None # milliseconds
 
-    # def __str__(self): #TODO: fix here
-    #     return f"Duration: {self.duration} ms\nTotal throughput: {self.total_throughput} kb/s\nEfficiency: {self.efficiency}\nRTT: {self.rtt}\nSRTT: {self.srtt}\nRTTVar: {self.rttvar}\nRTO: {self.rto}"
-
-def analyze_data(file : str, n : int) -> ConnectionData :
+    def __str__(self):
+        return (
+            f"----------{self.exp_name}----------\n"
+            f"duration:\t\t{self.duration} ms\n"
+            f"average_rcwnd:\t\t{self.average_rcwnd:.2f} bytes\n"
+            f"average_throughput:\t{self.average_throughput:.2f} kb/s\n"
+            f"total_throughput:\t{self.total_throughput:.2f} kb\n"
+            f"max_throughput:\t\t{self.max_throughput:.2f} kb/s\n"
+            f"average_use:\t\t{self.average_use:.2f} %\n"
+            f"average_rtt:\t\t{self.average_rtt:.2f} ms\n"
+            f"average_srtt:\t\t{self.average_srtt:.2f} ms\n"
+            f"average_rttvar:\t\t{self.average_rttvar:.2f} ms\n"
+            f"average_rto:\t\t{self.average_rto:.2f} ms\n"
+            f"---------------------------\n"
+        )
+def analyze_data(file : str, exp_name : str) -> ConnectionData :
+    """
+    Analyzes TCP connection data from a CSV file and computes various metrics.
+    Args:
+        file (str): The path to the CSV file containing the packet data.
+        exp_name (str): The name of the experiment, used to determine bandwidth.
+    Returns:
+        ConnectionData: An object containing the analyzed data and computed metrics.
+    The function performs the following analyses:
+        - Extracts the experiment name from the file name.
+        - Calculates the duration of the capture in milliseconds.
+        - Computes the round-trip time (RTT) for packets.
+        - Removes client-to-server packets from the dataset.
+        - Calculates the receiver's congestion window (rcwnd) and its average.
+        - Computes the throughput for each packet and calculates total, average, and maximum throughput.
+        - Calculates the efficiency of the connection.
+        - Computes the smoothed RTT (SRTT) and its average.
+        - Computes the RTT variance (RTTVAR) and its average.
+        - Calculates the retransmission timeout (RTO) and its average.
+    """
 
     packets = pd.read_csv(file)
     data : ConnectionData = ConnectionData()
-    bandwidth = ConnectionData.EXP_1_BANDWIDTH if n == 0 else ConnectionData.BANDWIDTH
+    bandwidth = ConnectionData.NOBWLIM_BANDWIDTH if exp_name == "nobwlim" else ConnectionData.BANDWIDTH
+
+    # EXP NAME
+    data.exp_name = exp_name
 
     # DURATION
     data.duration = int(packets['captureTime'].iloc[-1] * 1000)
-    print(f"Duration: {data.duration} ms")
-
+    
     # RTT
     client_to_server = packets[(packets['ipsrc'].isin(ConnectionData.CLIENT_IP)) & (packets['ipdst'].isin(ConnectionData.SERVER_IP))]
     server_to_client = packets[(packets['ipsrc'].isin(ConnectionData.SERVER_IP)) & (packets['ipdst'].isin(ConnectionData.CLIENT_IP))]
@@ -51,45 +117,35 @@ def analyze_data(file : str, n : int) -> ConnectionData :
             packets.at[index, 'rtt'] = int(rtt * 1000)
     
     data.rtt = packets[packets['rtt'] != 0]['rtt'].tolist()
-    
-    print(f"Average RTT: {sum(data.rtt) / len(data.rtt)} ms")
-    print(f"Minimum RTT: {min(data.rtt)} ms")
-    print(f"Maximum RTT: {max(data.rtt)} ms")
+    data.average_rtt = sum(data.rtt) / len(data.rtt)
     
     # REMOVE CLIENT TO SERVER PACKETS
     packets = packets.drop(client_to_server.index)
 
     # RCWND
     data.rcwnd = (packets['rcwnd']).tolist()
-    print(f"Average RCWND: {sum(data.rcwnd) / len(data.rcwnd)} bytes")
-    print(f"Minimum RCWND: {min(data.rcwnd)} bytes")
-    print(f"Maximum RCWND: {max(data.rcwnd)} bytes")
-    
+    data.average_rcwnd = sum(data.rcwnd) / len(data.rcwnd)
+
     # THROUGHPUT
     packets['throughput'] = 0
     for index, row in packets.iterrows():
         if row['rtt'] != 0:
-            # throughput.append(row['tcppayloadlen'] * 8 / 1000 / (row['rtt'] / 1000)) #TODO: errore ??? --> controllare col file sulla vm
             packets.at[index, 'throughput'] = int(min(row['rcwnd'] * 8 / 1000 / (row['rtt'] / 1000), bandwidth))
 
     data.throughput = packets['throughput'].tolist()
-    print(f"Throughput: {data.throughput[:5]}")
-    # TOTAL THROUGHPUT 
-    # total_throughput = packets['tcppayloadlen'].sum() * 8 / 1000 / (duration / 1000) #TODO: errore ??? --> controllare col file sulla vm
-    total_throughput = sum(data.throughput) / sum(data.rtt) * 1000
-    print(f"Total throughput: {total_throughput} kbps")
-    print(f"Average Throughput: {sum(data.throughput) / len(data.throughput)} kbps")
+    
+    # TOTAL THROUGHPUT
+    data.total_throughput = sum(data.throughput) / sum(data.rtt) * 1000
+    data.average_throughput = sum(data.throughput) / len(data.throughput)
 
-    # MAX THROUGHPUT #TODO: here
-    # max_throughput = max(data.throughput)
-    # print(f"Maximum Throughput: {max_throughput} kbps")
-
-    # EFFICIENCY //TODO: could be correct, we will see...
+    # MAX THROUGHPUT
+    data.max_throughput = max([throughput / rtt for throughput, rtt in zip(data.throughput, data.rtt) if rtt != 0])
+    
+    # EFFICIENCY
     packets = packets[packets['rtt'] != 0]
     packets['usage'] = packets.apply(lambda row: row['tcppayloadlen'] * 8 / (row['rtt'] * 1000) if row['rtt'] != 0 else 0, axis=1)
 
-    data.efficiency = packets['usage'].mean() * 100
-    print(f"Average usage: {data.efficiency} %")
+    data.average_use = packets['usage'].mean() * 100
 
     # SRTT
     data.srtt = []
@@ -99,8 +155,7 @@ def analyze_data(file : str, n : int) -> ConnectionData :
         else:
             srtt = (1 - ConnectionData.ALPHA) * data.srtt[i - 1] + ConnectionData.ALPHA * rtt
             data.srtt.append(srtt)
-
-    print(f"Smoothed RTT: {data.srtt[:5]}")
+    data.average_srtt = sum(data.srtt) / len(data.srtt)
 
     # RTTVAR
     data.rttvar = []
@@ -110,131 +165,25 @@ def analyze_data(file : str, n : int) -> ConnectionData :
         else:
             rttvar = (1 - ConnectionData.BETA) * data.rttvar[i - 1] + ConnectionData.BETA * abs(data.srtt[i] - rtt)
             data.rttvar.append(rttvar)
-
-    print(f"RTT Variance: {data.rttvar[:5]}")
+    data.average_rttvar = sum(data.rttvar) / len(data.rttvar)
 
     # RTO
     data.rto = []
     for i, srtt in enumerate(data.srtt):
         rto = srtt + 4 * data.rttvar[i]
         data.rto.append(rto)
-
-    print(f"Max RTO: {data.rto[:5]}")
+    data.average_rto = sum(data.rto) / len(data.rto)
     
     return data
 
-def create_summary_table(folder: str, data: list[ConnectionData]): #TODO: fix here
+def create_summary_table(folder: str, data: dict[str, ConnectionData]): #TODO: implement this --> to create a table as a summary
+    pass
 
-    fig, ax = plt.subplots(figsize=(15, len(data) * 0.5 + 2))
-    ax.axis('tight')
-    ax.axis('off')
+def plot_single(filename : str, data : ConnectionData): #TODO: implement this --> to plot graphs for each experiment
+    pass
 
-    table_data = [
-        ["Experiment", "Duration (ms)", "Total Throughput (kbps)", "Average Throughput (kbps)", "Average RTT (ms)", "Efficiency (%)"]
-    ]
-
-    for i, exp_data in enumerate(data):
-        table_data.append([
-            f"Experiment {i + 1}",
-            exp_data.duration,
-            f"{sum(exp_data.throughput) / sum(exp_data.rtt) * 1000:.2f}",
-            f"{sum(exp_data.throughput) / len(exp_data.throughput):.2f}",
-            f"{sum(exp_data.rtt) / len(exp_data.rtt):.2f}",
-            f"{exp_data.efficiency:.2f}"
-        ])
-
-    table = Table(ax, bbox=[0, 0, 1, 1])
-    n_rows, n_cols = len(table_data), len(table_data[0])
-    width, height = 1.0 / n_cols, 1.0 / n_rows
-    for i in range(n_rows):
-        for j in range(n_cols):
-            facecolor = 'lightblue' if i == 0 else ('lightgrey' if i % 2 == 0 else 'white')
-            table.add_cell(i, j, width, height, text=table_data[i][j], loc='center', facecolor=facecolor)
-
-    table.set_fontsize(12)
-    table.scale(1.2, 1.2)
-    ax.add_table(table)
-
-    plt.title('Summary of Experiments', fontsize=16)
-    plt.savefig(folder + 'summary.png')
-    plt.close()
-
-def plot_single(filename : str, data : ConnectionData):
-    fig, axs = plt.subplots(2, 2, figsize=(15, 10))
-
-    # Plot RTT
-    axs[0, 0].plot(data.rtt, label='RTT')
-    axs[0, 0].set_title('RTT')
-    axs[0, 0].set_xlabel('Packet Index')
-    axs[0, 0].set_ylabel('RTT (ms)')
-    axs[0, 0].legend()
-
-    # Plot SRTT
-    axs[0, 1].plot(data.srtt, label='SRTT', color='orange')
-    axs[0, 1].set_title('Smoothed RTT (SRTT)')
-    axs[0, 1].set_xlabel('Packet Index')
-    axs[0, 1].set_ylabel('SRTT (ms)')
-    axs[0, 1].legend()
-
-    # Plot RTT Variance
-    axs[1, 0].plot(data.rttvar, label='RTT Variance', color='green')
-    axs[1, 0].set_title('RTT Variance (RTTVAR)')
-    axs[1, 0].set_xlabel('Packet Index')
-    axs[1, 0].set_ylabel('RTTVAR (ms)')
-    axs[1, 0].legend()
-
-    # Plot RTO
-    axs[1, 1].plot(data.rto, label='RTO', color='red')
-    axs[1, 1].set_title('Retransmission Timeout (RTO)')
-    axs[1, 1].set_xlabel('Packet Index')
-    axs[1, 1].set_ylabel('RTO (ms)')
-    axs[1, 1].legend()
-
-    plt.tight_layout()
-    plt.savefig(filename + '_rtt.png')
-
-    # Plot Throughput
-    deltaX = int(sum(data.rtt) / len(data.rtt))
-
-    fig, ax1 = plt.subplots(figsize=(15, 10))
-
-    color = 'tab:blue'
-    ax1.set_xlabel(f'Packet Index (Segmented by {deltaX} ms)')
-    ax1.set_ylabel('Throughput (kbps)', color=color)
-    ax1.plot(range(0, len(data.throughput) * deltaX, deltaX), data.throughput, label='Throughput', color=color)
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.legend(loc='upper left')
-
-    ax2 = ax1.twinx()
-    color = 'tab:green'
-    ax2.set_ylabel('RCWND (bytes)', color=color)
-    ax2.plot(range(0, len(data.rcwnd) * deltaX, deltaX), data.rcwnd, label='RCWND', color=color)
-    ax2.tick_params(axis='y', labelcolor=color)
-    ax2.legend(loc='upper right')
-
-    # Add vertical lines to represent segments
-    for x in range(0, len(data.throughput) * deltaX, deltaX):
-        ax1.axvline(x=x, color='orange', linestyle='dotted')
-
-    plt.title('Throughput and RCWND')
-    plt.tight_layout()
-    plt.savefig(filename + '_throughput_rcwnd.png')
-
-def plot_multiple(folder : str, data : list[ConnectionData]):
-
-    # Plot RTT Distribution
-    fig, ax = plt.subplots(figsize=(15, 10))
-
-    for i, exp_data in enumerate(data):
-        ax.hist(exp_data.rtt, bins=50, alpha=0.5, label=f'Experiment {i + 1}')
-
-    ax.set_title('RTT Distribution Across Experiments')
-    ax.set_xlabel('RTT (ms)')
-    ax.set_ylabel('Frequency')
-    ax.legend()
-
-    plt.tight_layout()
-    plt.savefig(folder + 'rtt_distribution.png')
+def plot_multiple(folder : str, data : dict[str, ConnectionData]): #TODO: implement this --> to plot graphs for multiple experiments together
+    pass
 
 if __name__ == "__main__":
     pcap_path = "./pcap/"
@@ -250,7 +199,13 @@ if __name__ == "__main__":
     os.makedirs(single_plots_path, exist_ok=True)
     os.makedirs(multiple_plots_path, exist_ok=True)
 
-    experiments = []
+    experiments = {
+        "nobwlim" : None,
+        "s1" : None,
+        "s2" : None,
+        "p1" : None,
+        "p2" : None
+    }
 
     try:
     
@@ -265,8 +220,9 @@ if __name__ == "__main__":
             file_name = file.split('.')[0]
             file_path = os.path.join(data_path, file)
             plots_path = single_plots_path + file_name
-            data = analyze_data(file_path, i)
-            experiments.append(data)
+            data = analyze_data(file_path, file_name)
+            print(data)
+            experiments[file_name] = data
             plot_single(plots_path, data)
         create_summary_table(tables_path, experiments)
         plot_multiple(multiple_plots_path, experiments)
