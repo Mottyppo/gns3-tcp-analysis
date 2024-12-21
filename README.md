@@ -10,29 +10,34 @@ Il seguente progetto è stato sviluppato per analizzare i pacchetti TCP catturat
 
 1. Clonare la repository da Github e posizionarsi al suo interno:
 
-   ```sh
+   ```
    git clone https://github.com/Mottyppo/gns3-tcp-analysis.git
    cd gns3-tcp-analysis/
    ```
 2. Creare un virtual environment (venv):
 
-   ```sh
+   ```
    python -m venv .venv
    ```
 3. Attivare il venv:
-   * Su Windows:
+   * Su Windows (Command Prompt):
 
-     ```sh
-     .\venv\Scripts\activate
      ```
+     .venv\Scripts\activate
+     ```
+   * Su Windows (Powershell):
+
+     ```
+     .venv\Scripts\activate.bat
+     ```      
    * Su macOS/Linux:
 
-     ```sh
+     ```
      source .venv/bin/activate
      ```
 4. Installare i requirements:
 
-   ```sh
+   ```
    pip install -r requirements.txt
    ```
 5. Aggiungere i file `.pcap` alla cartella `pcap/` (se non esiste, crearla)
@@ -42,7 +47,7 @@ Il seguente progetto è stato sviluppato per analizzare i pacchetti TCP catturat
 
 Per analizzare i file `.pcap`, eseguire il seguente comando:
 
-```sh
+```
 python data_analyzer.py
 ```
 
