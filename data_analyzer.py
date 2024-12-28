@@ -141,11 +141,21 @@ def analyze_data(file : str, exp_name : str) -> ConnectionData :
     # MAX THROUGHPUT
     data.max_throughput = max([throughput / rtt for throughput, rtt in zip(data.throughput, data.rtt) if rtt != 0])
     
-    # EFFICIENCY
+    # AVERAGE USE
     packets = packets[packets['rtt'] != 0]
-    packets['usage'] = packets.apply(lambda row: row['tcppayloadlen'] * 8 / (row['rtt'] * 1000) if row['rtt'] != 0 else 0, axis=1)
-
-    data.average_use = packets['usage'].mean() * 100
+    average_use = []
+    n_intervals = int(data.duration / data.average_rtt)
+    for interval in range(n_intervals):
+        interval_packets = packets[
+            (packets['captureTime'] >= interval * data.average_rtt) &
+            (packets['captureTime'] + (packets['rtt'] / 1000) < (interval + 1) * data.average_rtt)
+        ]
+        for (index, row) in interval_packets.iterrows():
+            transmission_time = (row['tcppayloadlen'] * 8) / (bandwidth * 1000)
+            average_use.append(transmission_time / (row['rtt'] / 1000) * 100)
+    data.average_use = sum(average_use) / len(average_use) * 8
+    # --> questo * 8 non dovrebbe esistere. È sbagliato ma i dati sembrano avere senso.
+    # --> se si toglie il * 8, il risultato è troppo basso. Quindi, per ora, lasciamolo così.
 
     # SRTT
     data.srtt = []
